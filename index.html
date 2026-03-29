@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataMining AI — Data Science Toolkit</title>
+    <meta name="description"
+        content="A comprehensive AI-powered data science toolkit for visualization, analysis, and machine learning right in your browser.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Plotly.js for Charts -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Papa Parse for CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- html2canvas for Screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="theme-dark">
+    <div class="app-container">
+
+        <!-- ==================== CHAT SIDEBAR ==================== -->
+        <aside class="chat-sidebar" id="chatSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <div class="ai-orb">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>AI Assistant</h3>
+                </div>
+                <button class="sidebar-collapse-btn" id="collapseSidebar" title="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            </div>
+
+            <!-- AI Mode Selector (replaces raw API key input) -->
+            <div class="ai-mode-section" id="aiModeSection">
+                <div class="ai-mode-tabs">
+                    <button class="ai-tab active" id="useAiTab" title="Use built-in AI">
+                        <i class="fas fa-bolt"></i> Use AI
+                    </button>
+                    <button class="ai-tab" id="ownApiTab" title="Use your own API key">
+                        <i class="fas fa-key"></i> Own API
+                    </button>
+                </div>
+                <div class="ai-mode-status" id="aiModeStatus">
+                    <i class="fas fa-check-circle"></i> AI Ready — Built-in model active
+                </div>
+                <div class="own-api-panel" id="ownApiPanel" style="display:none;">
+                    <div class="api-input-wrap">
+                        <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key...">
+                        <button id="saveApiKey" title="Save Key"><i class="fas fa-check"></i></button>
+                    </div>
+                    <small>Get key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI
+                            Studio</a></small>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-welcome">
+                    <div class="ai-orb large">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h4>Hello! I'm your AI Data Analyst</h4>
+                    <p>Upload your data and ask me anything — I can help with analysis, insights, and recommendations.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="chat-input-area">
+                <div class="chat-input-wrap">
+                    <textarea id="chatInput" placeholder="Ask about your data..." rows="1"></textarea>
+                    <button id="sendChat" title="Send Message">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT ==================== -->
+        <main class="main-content" id="mainContent">
+
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="hamburger-btn" id="toggleSidebar" title="Toggle AI Chat">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="app-brand">
+                        <div class="brand-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h1>DataMining <span class="accent">AI</span></h1>
+                            <span class="tagline">Data Science Toolkit</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="top-bar-right">
+                    <div class="data-summary" id="dataSummary" style="display:none;">
+                        <span class="badge" id="rowCount"><i class="fas fa-table"></i> 0 rows</span>
+                        <span class="badge" id="colCount"><i class="fas fa-columns"></i> 0 cols</span>
+                        <span class="badge warning" id="nullCount"><i class="fas fa-exclamation-triangle"></i> 0
+                            nulls</span>
+                    </div>
+
+                    <!-- New Dataset Button -->
+                    <button class="btn-primary" id="newDatasetBtn" title="Upload New Dataset" style="display:none;">
+                        <i class="fas fa-plus-circle"></i> New Dataset
+                    </button>
+
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle-btn" id="themeToggle" title="Switch Theme">
+                        <i class="fas fa-palette"></i>
+                    </button>
+
+                    <div class="download-dropdown" id="downloadDropdown">
+                        <button class="btn-primary download-trigger" id="downloadBtn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <div class="dropdown-menu" id="downloadMenu">
+                            <button data-export="png"><i class="fas fa-image"></i> Export as PNG</button>
+                            <button data-export="pdf"><i class="fas fa-file-pdf"></i> Export as PDF</button>
+                            <button data-export="csv"><i class="fas fa-file-csv"></i> Export Data as CSV</button>
+                            <button data-export="json"><i class="fas fa-file-code"></i> Export Data as JSON</button>
+                            <button data-export="report"><i class="fas fa-file-alt"></i> Full Report (PDF)</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Upload Section -->
+            <section class="upload-section" id="uploadSection">
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-content">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h2>Drop your dataset here</h2>
+                        <p>Supports <strong>CSV</strong> files • Drag & drop or click to browse</p>
+                        <label class="btn-primary upload-btn">
+                            <i class="fas fa-folder-open"></i> Browse Files
+                            <input type="file" id="fileInput" accept=".csv" hidden>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Workspace (hidden initially) -->
+            <section class="workspace" id="workspace" style="display:none;">
+
+                <!-- Toolbar with scroll arrows -->
+                <div class="toolbar-wrapper">
+                    <button class="toolbar-scroll-arrow left" id="scrollToolbarLeft" title="Scroll Left">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="toolbar" id="toolbar">
+                        <!-- Axis Selectors -->
+                        <div class="toolbar-group axis-selectors">
+                            <div class="select-wrap">
+                                <label>X-Axis</label>
+                                <select id="xAxisSelect">
+                                    <option value="">Select column</option>
+                                </select>
+                            </div>
+                            <div class="select-wrap">
+                                <label>Y-Axis</label>
+                                <select id="yAxisSelect">
+                                    <option value="">Select column</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="toolbar-divider"></div>
+
+                        <!-- Chart Type Buttons -->
+                        <div class="toolbar-group chart-buttons" id="chartButtons">
+                            <button class="tool-btn" data-chart="bar" title="Bar Chart">
+                                <i class="fas fa-chart-bar"></i><span>Bar</span>
+                            </button>
+                            <button class="tool-btn" data-chart="line" title="Line Chart">
+                                <i class="fas fa-chart-line"></i><span>Line</span>
+                            </button>
+                            <button class="tool-btn" data-chart="scatter" title="Scatter Plot">
+                                <i class="fas fa-braille"></i><span>Scatter</span>
+                            </button>
+                            <button class="tool-btn" data-chart="histogram" title="Histogram">
+                                <i class="fas fa-signal"></i><span>Histogram</span>
+                            </button>
+                            <button class="tool-btn" data-chart="pie" title="Pie Chart">
+                                <i class="fas fa-chart-pie"></i><span>Pie</span>
+                            </button>
+                            <button class="tool-btn" data-chart="box" title="Box Plot">
+                                <i class="fas fa-box"></i><span>Box</span>
+                            </button>
+                            <button class="tool-btn" data-chart="heatmap" title="Heatmap">
+                                <i class="fas fa-th"></i><span>Heatmap</span>
+                            </button>
+                            <button class="tool-btn" data-chart="area" title="Area Chart">
+                                <i class="fas fa-mountain"></i><span>Area</span>
+                            </button>
+                            <button class="tool-btn" data-chart="violin" title="Violin Plot">
+                                <i class="fas fa-water"></i><span>Violin</span>
+                            </button>
+                            <button class="tool-btn" data-chart="bubble" title="Bubble Chart">
+                                <i class="fas fa-circle"></i><span>Bubble</span>
+                            </button>
+                        </div>
+
+                        <div class="toolbar-divider"></div>
+
+                        <!-- Data Science Tools -->
+                        <div class="toolbar-group ds-tools">
+                            <div class="dropdown-tool">
+                                <button class="tool-btn accent" id="nullFillBtn" title="Fill Null Values">
+                                    <i class="fas fa-magic"></i><span>Fill Nulls</span>
+                                </button>
+                                <div class="tool-dropdown" id="nullFillMenu">
+                                    <button data-fill="mean"><i class="fas fa-calculator"></i> Fill with Mean</button>
+                                    <button data-fill="median"><i class="fas fa-arrows-alt-h"></i> Fill with
+                                        Median</button>
+                                    <button data-fill="mode"><i class="fas fa-bullseye"></i> Fill with Mode</button>
+                                    <button data-fill="ffill"><i class="fas fa-arrow-down"></i> Forward Fill</button>
+                                    <button data-fill="bfill"><i class="fas fa-arrow-up"></i> Backward Fill</button>
+                                    <button data-fill="zero"><i class="fas fa-times-circle"></i> Fill with Zero</button>
+                                    <button data-fill="drop"><i class="fas fa-trash-alt"></i> Drop Null Rows</button>
+                                </div>
+                            </div>
+                            <button class="tool-btn" id="linearRegBtn" title="Linear Regression">
+                                <i class="fas fa-project-diagram"></i><span>Regression</span>
+                            </button>
+                            <button class="tool-btn" id="corrMatrixBtn" title="Correlation Matrix">
+                                <i class="fas fa-border-all"></i><span>Correlation</span>
+                            </button>
+                            <button class="tool-btn" id="descStatsBtn" title="Descriptive Statistics">
+                                <i class="fas fa-info-circle"></i><span>Statistics</span>
+                            </button>
+                            <button class="tool-btn" id="dataInfoBtn" title="Data Info">
+                                <i class="fas fa-database"></i><span>Data Info</span>
+                            </button>
+                            <button class="tool-btn" id="outlierBtn" title="Detect Outliers (IQR)">
+                                <i class="fas fa-exclamation-circle"></i><span>Outliers</span>
+                            </button>
+                            <button class="tool-btn" id="normalizeBtn" title="Normalize Data">
+                                <i class="fas fa-compress-arrows-alt"></i><span>Normalize</span>
+                            </button>
+                        </div>
+
+                        <div class="toolbar-divider"></div>
+
+                        <!-- Sheet & Text Tools -->
+                        <div class="toolbar-group sheet-tools">
+                            <button class="tool-btn" id="sheetBtn" title="Add all charts to Sheet (A4 PDF)">
+                                <i class="fas fa-file-invoice"></i><span>Sheet</span>
+                            </button>
+                            <button class="tool-btn" id="addTextBtn" title="Add Text Annotation">
+                                <i class="fas fa-font"></i><span>Text</span>
+                            </button>
+                            <button class="tool-btn" id="cutBtn" title="Cut Selected">
+                                <i class="fas fa-cut"></i><span>Cut</span>
+                            </button>
+                            <button class="tool-btn" id="copyBtn" title="Copy Selected">
+                                <i class="fas fa-copy"></i><span>Copy</span>
+                            </button>
+                            <button class="tool-btn" id="pasteBtn" title="Paste">
+                                <i class="fas fa-paste"></i><span>Paste</span>
+                            </button>
+                        </div>
+
+                        <div class="toolbar-divider"></div>
+
+                        <!-- View Toggle -->
+                        <div class="toolbar-group view-toggle">
+                            <button class="tool-btn active" id="viewSplit" title="Split View">
+                                <i class="fas fa-columns"></i>
+                            </button>
+                            <button class="tool-btn" id="viewTable" title="Table View">
+                                <i class="fas fa-table"></i>
+                            </button>
+                            <button class="tool-btn" id="viewChart" title="Chart View">
+                                <i class="fas fa-chart-area"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="toolbar-scroll-arrow right" id="scrollToolbarRight" title="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Panels -->
+                <div class="panels" id="panels">
+                    <!-- Data Table Panel -->
+                    <div class="panel data-panel" id="dataPanel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-table"></i> Data Table</h3>
+                            <div class="panel-actions">
+                                <input type="text" id="tableSearch" placeholder="Search..." class="panel-search">
+                            </div>
+                        </div>
+                        <div class="table-container" id="tableContainer">
+                            <table id="dataTable">
+                                <thead id="dataTableHead"></thead>
+                                <tbody id="dataTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="table-pagination" id="tablePagination">
+                            <button id="prevPage" disabled><i class="fas fa-chevron-left"></i></button>
+                            <span id="pageInfo">Page 1</span>
+                            <button id="nextPage"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Panel — Multi-Cell Jupyter/Colab Notebook -->
+                    <div class="panel chart-panel notebook-panel" id="chartPanel">
+                        <div class="panel-header notebook-header">
+                            <h3><i class="fas fa-book-open"></i> Notebook — Visualization</h3>
+                            <div class="panel-actions">
+                                <button id="addCellBtn" class="icon-btn accent" title="Add New Cell"><i class="fas fa-plus"></i></button>
+                                <button id="clearAllCellsBtn" class="icon-btn" title="Clear All Cells"><i class="fas fa-eraser"></i></button>
+                                <button id="fullscreenChart" class="icon-btn" title="Expand Notebook"><i class="fas fa-expand"></i></button>
+                            </div>
+                        </div>
+                        <!-- Multi-cell scrollable notebook -->
+                        <div class="notebook-body multi-cell-notebook" id="notebookBody">
+                            <!-- Welcome placeholder (shown when no cells) -->
+                            <div class="notebook-welcome" id="notebookWelcome">
+                                <div class="welcome-icon"><i class="fas fa-flask"></i></div>
+                                <h3>Your notebook is empty</h3>
+                                <p>Select X & Y axis columns, then click a chart type button — a new cell will appear here.<br>Or click <strong><i class="fas fa-plus"></i> Add Cell</strong> to start manually.</p>
+                                <button class="btn-primary" id="addFirstCellBtn" style="margin-top:12px;">
+                                    <i class="fas fa-plus"></i> Add First Cell
+                                </button>
+                            </div>
+                            <!-- Cells will be injected here dynamically -->
+                        </div>
+                        <!-- SFX overlay -->
+                        <div class="chart-sfx-overlay" id="chartSfxOverlay"></div>
+                    </div>
+
+                    <!-- Legacy single-chart hidden elements (kept for compatibility) -->
+                    <div style="display:none;" aria-hidden="true">
+                        <div id="chartArea"></div>
+                        <div id="chartPlaceholder"></div>
+                        <div id="outputCell"></div>
+                        <div id="pythonCodePanel">
+                            <textarea id="pythonCodeEditor"></textarea>
+                            <div id="pythonCodeBody"></div>
+                            <span id="execCount">1</span>
+                            <button id="runPythonBtn"></button>
+                            <button id="copyPythonBtn"></button>
+                            <button id="togglePythonBtn"></button>
+                        </div>
+                        <button id="zoomInBtn"></button>
+                        <button id="zoomOutBtn"></button>
+                        <button id="resetViewBtn"></button>
+                        <button id="clearChart"></button>
+                    </div>
+                </div>
+
+                <!-- Stats Output Panel -->
+                <div class="stats-panel" id="statsPanel" style="display:none;">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-calculator"></i> Analysis Output</h3>
+                        <button class="icon-btn" id="closeStats"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="stats-content" id="statsContent"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Text Annotation Modal -->
+    <div class="modal-overlay" id="textModal" style="display:none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-font"></i> Add Text Annotation</h3>
+                <button class="icon-btn" id="closeTextModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label>Text Content</label>
+                    <textarea id="annotationText" rows="3" placeholder="Enter your annotation text..."></textarea>
+                </div>
+                <button class="btn-primary" id="addAnnotationBtn" style="width:100%;justify-content:center;">
+                    <i class="fas fa-plus"></i> Add to Chart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sheet Builder Modal -->
+    <div class="modal-overlay" id="sheetModal" style="display:none;">
+        <div class="modal" style="max-width:560px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-invoice"></i> Build Report Sheet</h3>
+                <button class="icon-btn" id="closeSheetModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+                    Generate all chart types for selected columns into an A4 sheet.
+                </p>
+                <div class="setting-group">
+                    <label>Export Format</label>
+                    <select id="sheetFormat">
+                        <option value="pdf">PDF (A4)</option>
+                        <option value="png">PNG (Images)</option>
+                        <option value="csv">CSV (Data + Stats)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Include</label>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+                        <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sheetCharts" checked> All generated charts
+                        </label>
+                        <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sheetStats" checked> Descriptive statistics
+                        </label>
+                        <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sheetCorr" checked> Correlation matrix
+                        </label>
+                        <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sheetDataPreview"> Data preview (first 20 rows)
+                        </label>
+                        <label style="font-size:12px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="sheetPythonCode" checked> Python code for each chart
+                        </label>
+                    </div>
+                </div>
+                <button class="btn-primary" id="generateSheetBtn" style="width:100%;justify-content:center;">
+                    <i class="fas fa-file-pdf"></i> Generate Sheet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display:none;">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <p id="loadingText">Processing data...</p>
+        </div>
+    </div>
+
+    <!-- Main JS -->
+    <script src="js/main.js"></script>
+</body>
+
+</html>
