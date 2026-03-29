@@ -19,6 +19,8 @@ DataMining AI is a comprehensive, browser-based, AI-powered data science toolkit
   - Export charts as PNG or PDF
   - Download processed data as CSV or JSON
   - Generate a full A4 Report Sheet containing charts, stats, and Python code snippets.
+  - <img width="732" height="601" alt="Screenshot 2026-03-29 142617" src="https://github.com/user-attachments/assets/470f19db-6435-49e7-86f0-d1d72c0efcb4" />
+
 
 ## Technologies Used
 
@@ -36,6 +38,9 @@ Since this is a client-side application, you don't need a complex server setup t
 2. Open `index.html` in your modern web browser (Chrome, Firefox, Edge, Safari) or use a local development server like Live Server.
 3. Click on the **Browse Files** button or drag and drop a `.csv` dataset into the dropzone.
 4. Use the toolbar to select your X and Y axes, choose a chart type, and start exploring your data!
+<img width="1919" height="913" alt="Screenshot 2026-03-29 142606" src="https://github.com/user-attachments/assets/6d20b5c8-8f86-4ba3-a19e-3581cc9805f4" />
+ 
+
 
 ## How to use the AI Assistant
 
