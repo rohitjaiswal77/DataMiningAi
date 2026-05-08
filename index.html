@@ -37,65 +37,6 @@
 <body class="theme-dark">
     <div class="app-container">
 
-        <!-- ==================== CHAT SIDEBAR ==================== -->
-        <aside class="chat-sidebar" id="chatSidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo">
-                    <div class="ai-orb">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <h3>AI Assistant</h3>
-                </div>
-                <button class="sidebar-collapse-btn" id="collapseSidebar" title="Toggle Sidebar">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            </div>
-
-            <!-- AI Mode Selector (replaces raw API key input) -->
-            <div class="ai-mode-section" id="aiModeSection">
-                <div class="ai-mode-tabs">
-                    <button class="ai-tab active" id="useAiTab" title="Use built-in AI">
-                        <i class="fas fa-bolt"></i> Use AI
-                    </button>
-                    <button class="ai-tab" id="ownApiTab" title="Use your own API key">
-                        <i class="fas fa-key"></i> Own API
-                    </button>
-                </div>
-                <div class="ai-mode-status" id="aiModeStatus">
-                    <i class="fas fa-check-circle"></i> AI Ready — Built-in model active
-                </div>
-                <div class="own-api-panel" id="ownApiPanel" style="display:none;">
-                    <div class="api-input-wrap">
-                        <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key...">
-                        <button id="saveApiKey" title="Save Key"><i class="fas fa-check"></i></button>
-                    </div>
-                    <small>Get key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI
-                            Studio</a></small>
-                </div>
-            </div>
-
-            <!-- Chat Messages -->
-            <div class="chat-messages" id="chatMessages">
-                <div class="chat-welcome">
-                    <div class="ai-orb large">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <h4>Hello! I'm your AI Data Analyst</h4>
-                    <p>Upload your data and ask me anything — I can help with analysis, insights, and recommendations.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Chat Input -->
-            <div class="chat-input-area">
-                <div class="chat-input-wrap">
-                    <textarea id="chatInput" placeholder="Ask about your data..." rows="1"></textarea>
-                    <button id="sendChat" title="Send Message">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-        </aside>
 
         <!-- ==================== MAIN CONTENT ==================== -->
         <main class="main-content" id="mainContent">
@@ -103,9 +44,7 @@
             <!-- Top Bar -->
             <header class="top-bar">
                 <div class="top-bar-left">
-                    <button class="hamburger-btn" id="toggleSidebar" title="Toggle AI Chat">
-                        <i class="fas fa-bars"></i>
-                    </button>
+
                     <div class="app-brand">
                         <div class="brand-icon">
                             <i class="fas fa-chart-line"></i>
@@ -149,22 +88,51 @@
                 </div>
             </header>
 
-            <!-- Upload Section -->
+            <!-- Welcome / Upload Section -->
             <section class="upload-section" id="uploadSection">
-                <div class="dropzone" id="dropzone">
-                    <div class="dropzone-content">
-                        <div class="upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
+                <div class="welcome-hero">
+                    <!-- Animated background orbs -->
+                    <div class="hero-orb hero-orb-1"></div>
+                    <div class="hero-orb hero-orb-2"></div>
+                    <div class="hero-orb hero-orb-3"></div>
+
+                    <!-- Hero Content -->
+                    <div class="hero-content">
+                        <div class="hero-badge">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Data Science Toolkit</span>
                         </div>
-                        <h2>Drop your dataset here</h2>
-                        <p>Supports <strong>CSV</strong> files • Drag & drop or click to browse</p>
-                        <label class="btn-primary upload-btn">
-                            <i class="fas fa-folder-open"></i> Browse Files
-                            <input type="file" id="fileInput" accept=".csv" hidden>
-                        </label>
+                        <h1 class="hero-title">Welcome to <span class="hero-accent">DataMining</span></h1>
+                        <p class="hero-subtitle">Upload your CSV dataset and instantly explore, visualize, and analyze your data with powerful interactive charts and tools.</p>
+
+                        <!-- Feature Pills -->
+                        <div class="hero-features">
+                            <span class="feature-pill"><i class="fas fa-chart-bar"></i> 10+ Chart Types</span>
+                            <span class="feature-pill"><i class="fas fa-table"></i> Data Table</span>
+                            <span class="feature-pill"><i class="fas fa-calculator"></i> Statistics</span>
+                            <span class="feature-pill"><i class="fas fa-border-all"></i> Correlation</span>
+                            <span class="feature-pill"><i class="fas fa-file-pdf"></i> Export PDF</span>
+                        </div>
+
+                        <!-- Upload Card -->
+                        <div class="upload-card" id="dropzone">
+                            <div class="upload-card-inner">
+                                <div class="upload-icon-wrap">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <h3>Drop your CSV file here</h3>
+                                <p>Drag &amp; drop or click the button below to browse your files</p>
+                                <label class="btn-primary upload-btn" style="cursor:pointer;">
+                                    <i class="fas fa-folder-open"></i> Browse CSV File
+                                    <input type="file" id="fileInput" accept=".csv" hidden>
+                                </label>
+                                <p class="upload-hint"><i class="fas fa-shield-alt"></i> Your data stays in your browser — never uploaded to any server</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
+
 
             <!-- Workspace (hidden initially) -->
             <section class="workspace" id="workspace" style="display:none;">
