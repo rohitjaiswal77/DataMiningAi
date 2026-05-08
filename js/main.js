@@ -2,9 +2,6 @@
 (function () {
     'use strict';
 
-    // ===== BUILT-IN API KEY (obfuscated) =====
-    const _k = ['AIza', 'SyDs', 'e_CJ', 'Nm-1', 'a3Ri', 'qoX1', 'ihle', 'MNA0', 'EHS4', 'Lfg'];
-    const getBuiltInKey = () => _k.join('');
 
     // ===== INDEXEDDB DATASET CACHE =====
     const CACHE_DB_NAME = 'DataMiningAI_Cache';
@@ -60,7 +57,7 @@
         rawData: [], data: [], columns: [], columnTypes: {},
         fileName: '', currentPage: 0, pageSize: 50,
         sortColumn: null, sortDirection: 'asc',
-        apiKey: '', aiMode: 'builtin', // 'builtin' or 'own'
+        // ai settings removed
         currentChart: null, chartHistory: [],
         themeIndex: 0, themes: ['theme-dark', 'theme-light', 'theme-red'],
         clipboard: null,
@@ -78,15 +75,13 @@
     const $$ = (s) => document.querySelectorAll(s);
     const dom = {};
     function cacheDom() {
-        const ids = ['chatSidebar', 'collapseSidebar', 'toggleSidebar', 'apiKeyInput', 'saveApiKey',
-            'chatMessages', 'chatInput', 'sendChat', 'dataSummary', 'rowCount', 'colCount', 'nullCount',
+        const ids = ['dataSummary', 'rowCount', 'colCount', 'nullCount',
             'downloadBtn', 'downloadMenu', 'uploadSection', 'dropzone', 'fileInput', 'workspace',
             'xAxisSelect', 'yAxisSelect', 'chartButtons', 'dataTableHead', 'dataTableBody', 'tableSearch',
             'prevPage', 'nextPage', 'pageInfo', 'chartArea', 'chartPlaceholder', 'statsPanel', 'statsContent',
             'closeStats', 'nullFillBtn', 'nullFillMenu', 'linearRegBtn', 'corrMatrixBtn', 'descStatsBtn',
             'dataInfoBtn', 'outlierBtn', 'normalizeBtn', 'clearChart', 'fullscreenChart',
             'viewSplit', 'viewTable', 'viewChart', 'panels', 'toastContainer', 'themeToggle',
-            'useAiTab', 'ownApiTab', 'ownApiPanel', 'aiModeStatus',
             'sheetBtn', 'addTextBtn', 'cutBtn', 'copyBtn', 'pasteBtn',
             'scrollToolbarLeft', 'scrollToolbarRight', 'toolbar',
             'textModal', 'closeTextModal', 'annotationText', 'addAnnotationBtn',
@@ -106,11 +101,8 @@
     // ===== INIT =====
     function init() {
         cacheDom();
-        state.apiKey = localStorage.getItem('gemini_api_key') || '';
-        state.aiMode = localStorage.getItem('ai_mode') || 'builtin';
         const savedTheme = localStorage.getItem('theme_index');
         if (savedTheme !== null) { state.themeIndex = parseInt(savedTheme); applyTheme(); }
-        updateAiModeUI();
         setupEvents();
         // Restore cached dataset if available
         restoreCachedDataset();
@@ -165,40 +157,14 @@
         } catch (e) { }
     }
 
-    // ===== AI MODE =====
-    function setAiMode(mode) {
-        state.aiMode = mode;
-        localStorage.setItem('ai_mode', mode);
-        updateAiModeUI();
-    }
 
-    function updateAiModeUI() {
-        const isOwn = state.aiMode === 'own';
-        dom.useAiTab.classList.toggle('active', !isOwn);
-        dom.ownApiTab.classList.toggle('active', isOwn);
-        dom.ownApiPanel.style.display = isOwn ? 'block' : 'none';
-        dom.aiModeStatus.innerHTML = isOwn
-            ? (state.apiKey ? '<i class="fas fa-check-circle"></i> Your API key is active' : '<i class="fas fa-exclamation-circle" style="color:var(--amber)"></i> Enter your API key below')
-            : '<i class="fas fa-check-circle"></i> AI Ready — Built-in model active';
-    }
-
-    function getActiveApiKey() {
-        return state.aiMode === 'own' ? state.apiKey : getBuiltInKey();
-    }
 
     // ===== EVENTS =====
     function setupEvents() {
-        dom.collapseSidebar.onclick = dom.toggleSidebar.onclick = () => dom.chatSidebar.classList.toggle('collapsed');
         dom.themeToggle.onclick = cycleTheme;
 
-        // AI mode tabs
-        dom.useAiTab.onclick = () => setAiMode('builtin');
-        dom.ownApiTab.onclick = () => setAiMode('own');
-        dom.saveApiKey.onclick = saveApiKey;
-        dom.apiKeyInput.onkeydown = (e) => { if (e.key === 'Enter') saveApiKey(); };
-
-        // File upload
-        dom.dropzone.onclick = () => dom.fileInput.click();
+        // File upload - only open file picker when clicking outside the label button
+        dom.dropzone.onclick = (e) => { if (!e.target.closest('label')) dom.fileInput.click(); };
         dom.newDatasetBtn.onclick = newDataset;
         dom.fileInput.onchange = (e) => { if (e.target.files.length) handleFile(e.target.files[0]); };
         dom.dropzone.ondragover = (e) => { e.preventDefault(); dom.dropzone.classList.add('dragover'); };
@@ -267,10 +233,7 @@
         dom.prevPage.onclick = () => { if (state.currentPage > 0) { state.currentPage--; renderTable(); } };
         dom.nextPage.onclick = () => { const max = Math.ceil(getFilteredData().length / state.pageSize) - 1; if (state.currentPage < max) { state.currentPage++; renderTable(); } };
 
-        // Chat
-        dom.sendChat.onclick = sendChatMessage;
-        dom.chatInput.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } };
-        dom.chatInput.oninput = () => { dom.chatInput.style.height = 'auto'; dom.chatInput.style.height = Math.min(dom.chatInput.scrollHeight, 100) + 'px'; };
+        // Chat events removed
 
         // Toolbar scroll
         dom.scrollToolbarLeft.onclick = () => { dom.toolbar.scrollLeft -= 200; };
@@ -299,10 +262,7 @@
         };
     }
 
-    function saveApiKey() {
-        const key = dom.apiKeyInput.value.trim();
-        if (key) { state.apiKey = key; localStorage.setItem('gemini_api_key', key); dom.apiKeyInput.value = '••••••••'; updateAiModeUI(); showToast('API key saved!', 'success'); }
-    }
+
 
     // ===== ZOOM HELPER =====
     function zoomAxis(axis, factor) {
@@ -403,6 +363,9 @@
             sel.innerHTML = '<option value="">Select column</option>';
             state.columns.forEach(col => { const o = document.createElement('option'); o.value = col; o.textContent = col; sel.appendChild(o); });
         });
+        if (state.columns.length > 0) dom.xAxisSelect.value = state.columns[0];
+        if (state.columns.length > 1) dom.yAxisSelect.value = state.columns[1];
+        else if (state.columns.length === 1) dom.yAxisSelect.value = state.columns[0];
         updateSummary(); renderTable();
     }
 
@@ -524,42 +487,196 @@
 
     // ===== CHARTS & MULTI-CELL NOTEBOOK =====
     function getVals(col) { return state.data.map(r => r[col]).filter(v => v != null && v !== ''); }
+    function getNumVals(col) { return getVals(col).map(Number).filter(v => isFinite(v)); }
 
     // Chart icon map
     const CHART_ICONS = { bar:'chart-bar', line:'chart-line', scatter:'braille', histogram:'signal', pie:'chart-pie', box:'box', heatmap:'th', area:'mountain', violin:'water', bubble:'circle', regression:'project-diagram' };
 
     // Build Plotly traces/layout for a given type+cols
     function buildChartConfig(type, xCol, yCol, containerEl) {
-        const rect = containerEl ? containerEl.getBoundingClientRect() : { width: 600, height: 350 };
-        const chartW = Math.max(rect.width || 600, 300);
-        const chartH = Math.max(rect.height || 350, 260);
         const c = getChartColors();
-        const palette = ['#7c3aed','#06b6d4','#10b981','#f59e0b','#f43f5e','#a78bfa','#34d399','#fb923c','#e879f9'];
-        const layout = {
+        const pal = ['#7c3aed','#06b6d4','#10b981','#f59e0b','#f43f5e','#a78bfa','#34d399','#fb923c','#e879f9','#818cf8'];
+        const mkTitle = t => ({ text: t, font: { size: 16, color: c.title }, x: 0.5, xanchor: 'center' });
+        const axCfg = (lbl) => ({ title: { text: lbl, font: { size: 13, color: c.text } }, gridcolor: c.grid, zerolinecolor: c.grid, linecolor: c.grid, showgrid: true, color: c.text });
+        const baseLayout = {
             paper_bgcolor: c.paper, plot_bgcolor: c.bg,
             font: { family: 'Inter, sans-serif', color: c.text, size: 12 },
-            margin: { t: 50, r: 30, b: 60, l: 60 },
-            xaxis: { title: xCol || '', gridcolor: c.grid, zerolinecolor: c.grid },
-            yaxis: { title: yCol || '', gridcolor: c.grid, zerolinecolor: c.grid },
+            margin: { t: 60, r: 40, b: 70, l: 70 },
             showlegend: false, autosize: true, dragmode: 'pan',
+            hoverlabel: { bgcolor: '#1e1e2e', bordercolor: '#7c3aed', font: { color: '#f1f5f9', size: 12 } },
         };
-        const config = { responsive: true, displayModeBar: true, scrollZoom: true, displaylogo: false,
-            modeBarButtonsToAdd: ['pan2d','zoomIn2d','zoomOut2d','resetScale2d'] };
-        let traces = [];
+        const config = { responsive: true, displayModeBar: true, scrollZoom: true, displaylogo: false };
+        let traces = [], layout = Object.assign({}, baseLayout);
+
         switch (type) {
-            case 'bar': { const x=getVals(xCol),y=getVals(yCol); traces=[{x,y,type:'bar',marker:{color:x.map((_,i)=>palette[i%palette.length]),opacity:0.85}}]; layout.title={text:`${yCol} by ${xCol}`,font:{size:15,color:c.title}}; break; }
-            case 'line': { const x=getVals(xCol),y=getVals(yCol); traces=[{x,y,type:'scatter',mode:'lines+markers',line:{color:'#7c3aed',width:3,shape:'spline'},marker:{color:'#a78bfa',size:6}}]; layout.title={text:`${yCol} vs ${xCol}`,font:{size:15,color:c.title}}; break; }
-            case 'scatter': { const x=getVals(xCol),y=getVals(yCol); traces=[{x,y,type:'scatter',mode:'markers',marker:{color:'#06b6d4',size:9,opacity:0.7}}]; layout.title={text:`${xCol} vs ${yCol}`,font:{size:15,color:c.title}}; break; }
-            case 'histogram': { const col=xCol||yCol; traces=[{x:getVals(col),type:'histogram',marker:{color:'#7c3aed',opacity:0.8},nbinsx:30}]; layout.title={text:`Distribution of ${col}`,font:{size:15,color:c.title}}; layout.xaxis.title=col; layout.yaxis.title='Frequency'; break; }
-            case 'pie': { const col=xCol||yCol,vals=getVals(col),counts={}; vals.forEach(v=>counts[v]=(counts[v]||0)+1); traces=[{labels:Object.keys(counts),values:Object.values(counts),type:'pie',hole:0.4,marker:{colors:palette,line:{color:c.bg,width:2}},textfont:{color:c.title},textinfo:'label+percent'}]; layout.title={text:`Distribution of ${col}`,font:{size:15,color:c.title}}; delete layout.xaxis; delete layout.yaxis; break; }
-            case 'box': { const numCols=state.columns.filter(c2=>state.columnTypes[c2]==='numeric'),cols=xCol?[xCol]:numCols.slice(0,5); traces=cols.map((c2,i)=>({y:getVals(c2),type:'box',name:c2,marker:{color:palette[i%palette.length]},boxpoints:'outliers'})); layout.title={text:'Box Plot',font:{size:15,color:c.title}}; layout.showlegend=true; break; }
-            case 'heatmap': { const numCols=state.columns.filter(c2=>state.columnTypes[c2]==='numeric'); if(numCols.length<2){showToast('Need 2+ numeric cols','error');return null;} const matrix=numCols.map(c1=>numCols.map(c2=>pearsonCorr(getVals(c1),getVals(c2)))); traces=[{z:matrix,x:numCols,y:numCols,type:'heatmap',colorscale:[[0,'#f43f5e'],[0.5,'#1a1a2e'],[1,'#06b6d4']],zmin:-1,zmax:1,text:matrix.map(r=>r.map(v=>v.toFixed(2))),texttemplate:'%{text}',textfont:{color:c.title,size:10}}]; layout.title={text:'Correlation Heatmap',font:{size:15,color:c.title}}; break; }
-            case 'area': { const x=getVals(xCol),y=getVals(yCol); traces=[{x,y,type:'scatter',mode:'lines',fill:'tozeroy',fillcolor:'rgba(124,58,237,0.15)',line:{color:'#7c3aed',width:2,shape:'spline'}}]; layout.title={text:`${yCol} over ${xCol}`,font:{size:15,color:c.title}}; break; }
-            case 'violin': { const col=xCol||yCol; traces=[{y:getVals(col).filter(v=>typeof v==='number'),type:'violin',name:col,box:{visible:true},meanline:{visible:true},line:{color:'#7c3aed'},fillcolor:'rgba(124,58,237,0.2)'}]; layout.title={text:`Violin — ${col}`,font:{size:15,color:c.title}}; break; }
-            case 'bubble': { const x=getVals(xCol),y=getVals(yCol),sz=y.map(v=>Math.abs(Number(v)||10)),mx=Math.max(...sz); traces=[{x,y,type:'scatter',mode:'markers',marker:{size:sz.map(s=>(s/mx)*50+5),color:sz,colorscale:[[0,'#7c3aed'],[1,'#06b6d4']],opacity:0.7}}]; layout.title={text:`${xCol} vs ${yCol} (Bubble)`,font:{size:15,color:c.title}}; break; }
+            case 'bar': {
+                if (!xCol || !yCol) { showToast('Select X and Y columns for Bar chart', 'error'); return null; }
+                const xv = getVals(xCol), yv = getNumVals(yCol), len = Math.min(xv.length, yv.length);
+                if (!len) { showToast('No valid data for Bar chart', 'error'); return null; }
+                traces = [{ x: xv.slice(0,len), y: yv.slice(0,len), type: 'bar',
+                    marker: { color: yv.slice(0,len).map((_,i) => pal[i % pal.length]), opacity: 0.88, line: { color: 'rgba(255,255,255,0.1)', width: 1 } },
+                    hovertemplate: `<b>%{x}</b><br>${yCol}: <b>%{y}</b><extra></extra>` }];
+                layout = { ...layout, title: mkTitle(`${yCol} by ${xCol}`), xaxis: axCfg(xCol), yaxis: axCfg(yCol), bargap: 0.2 };
+                break;
+            }
+            case 'line': {
+                if (!xCol || !yCol) { showToast('Select X and Y columns for Line chart', 'error'); return null; }
+                const xv = getVals(xCol), yv = getNumVals(yCol), len = Math.min(xv.length, yv.length);
+                if (!len) { showToast('No valid data for Line chart', 'error'); return null; }
+                traces = [{ x: xv.slice(0,len), y: yv.slice(0,len), type: 'scatter', mode: 'lines+markers',
+                    line: { color: '#7c3aed', width: 3, shape: 'spline', smoothing: 0.8 },
+                    marker: { color: '#a78bfa', size: 6, line: { color: '#7c3aed', width: 2 } },
+                    hovertemplate: `${xCol}: %{x}<br><b>${yCol}: %{y}</b><extra></extra>` }];
+                layout = { ...layout, title: mkTitle(`${yCol} over ${xCol}`), xaxis: axCfg(xCol), yaxis: axCfg(yCol) };
+                break;
+            }
+            case 'scatter': {
+                if (!xCol || !yCol) { showToast('Select X and Y columns for Scatter chart', 'error'); return null; }
+                const xv = getNumVals(xCol), yv = getNumVals(yCol), len = Math.min(xv.length, yv.length);
+                if (!len) { showToast('No numeric data for Scatter chart', 'error'); return null; }
+                traces = [{ x: xv.slice(0,len), y: yv.slice(0,len), type: 'scatter', mode: 'markers',
+                    marker: { color: xv.slice(0,len), colorscale: [[0,'#7c3aed'],[0.5,'#06b6d4'],[1,'#10b981']],
+                        size: 9, opacity: 0.78, showscale: true, colorbar: { thickness: 14, outlinewidth: 0 },
+                        line: { color: 'rgba(255,255,255,0.15)', width: 1 } },
+                    hovertemplate: `${xCol}: %{x}<br>${yCol}: %{y}<extra></extra>` }];
+                layout = { ...layout, title: mkTitle(`${xCol} vs ${yCol}`), xaxis: axCfg(xCol), yaxis: axCfg(yCol) };
+                break;
+            }
+            case 'histogram': {
+                // Prefer a meaningful numeric column — yCol first if numeric, else xCol
+                let col = (yCol && state.columnTypes[yCol] === 'numeric') ? yCol
+                        : (xCol && state.columnTypes[xCol] === 'numeric') ? xCol
+                        : yCol || xCol;
+                if (!col) { showToast('Select a column for Histogram', 'error'); return null; }
+                const vals = getNumVals(col);
+                if (!vals.length) { showToast(`No numeric data in "${col}" for Histogram`, 'error'); return null; }
+                // Sturges rule for bin count, max 60
+                const bins = Math.min(60, Math.max(10, Math.ceil(1 + 3.322 * Math.log10(vals.length))));
+                traces = [{ x: vals, type: 'histogram', nbinsx: bins,
+                    marker: { color: '#7c3aed', opacity: 0.85, line: { color: '#a78bfa', width: 1.2 } },
+                    hovertemplate: 'Range: %{x}<br>Count: %{y}<extra></extra>' }];
+                layout = { ...layout, title: mkTitle(`Distribution of ${col}`),
+                    xaxis: axCfg(col), yaxis: axCfg('Frequency'), bargap: 0.06 };
+                break;
+            }
+            case 'pie': {
+                const col = xCol || yCol;
+                if (!col) { showToast('Select a column for Pie chart', 'error'); return null; }
+                const vals = getVals(col);
+                if (!vals.length) { showToast('No data for Pie chart', 'error'); return null; }
+                const counts = {};
+                vals.forEach(v => counts[String(v)] = (counts[String(v)] || 0) + 1);
+                const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 15);
+                traces = [{ labels: sorted.map(d=>d[0]), values: sorted.map(d=>d[1]), type: 'pie',
+                    hole: 0.38, marker: { colors: pal, line: { color: c.paper, width: 2 } },
+                    textfont: { color: '#f1f5f9', size: 11 }, textinfo: 'label+percent',
+                    hovertemplate: '<b>%{label}</b><br>Count: %{value}<br>%{percent}<extra></extra>' }];
+                layout = { ...layout, title: mkTitle(`Distribution of ${col}`), showlegend: true,
+                    legend: { font: { color: c.text }, bgcolor: 'transparent' } };
+                break;
+            }
+            case 'box': {
+                const numCols = state.columns.filter(c2 => state.columnTypes[c2] === 'numeric');
+                const cols = yCol ? [yCol] : (xCol ? [xCol] : numCols.slice(0, 6));
+                if (!cols.length) { showToast('No numeric columns for Box plot', 'error'); return null; }
+                traces = cols.map((c2, i) => ({ y: getNumVals(c2), type: 'box', name: c2,
+                    marker: { color: pal[i % pal.length], size: 4, opacity: 0.65 },
+                    line: { color: pal[i % pal.length], width: 2 },
+                    fillcolor: pal[i % pal.length] + '33', boxpoints: 'outliers', jitter: 0.35,
+                    hovertemplate: `<b>${c2}</b><br>%{y}<extra></extra>` }));
+                layout = { ...layout, title: mkTitle(cols.length === 1 ? `Box Plot — ${cols[0]}` : 'Box Plot Comparison'),
+                    xaxis: axCfg(''), yaxis: axCfg('Value'), showlegend: cols.length > 1 };
+                break;
+            }
+            case 'heatmap': {
+                const numCols = state.columns.filter(c2 => state.columnTypes[c2] === 'numeric').slice(0, 15);
+                if (numCols.length < 2) { showToast('Need 2+ numeric columns for Heatmap', 'error'); return null; }
+                const matrix = numCols.map(c1 => numCols.map(c2 => pearsonCorr(getNumVals(c1), getNumVals(c2))));
+                traces = [{ z: matrix, x: numCols, y: numCols, type: 'heatmap',
+                    colorscale: [[0,'#f43f5e'],[0.25,'#fb923c'],[0.5,'#1e1e3f'],[0.75,'#06b6d4'],[1,'#10b981']],
+                    zmin: -1, zmax: 1,
+                    text: matrix.map(row => row.map(v => isFinite(v) ? v.toFixed(2) : 'N/A')),
+                    texttemplate: '%{text}', textfont: { color: '#fff', size: 10 },
+                    hovertemplate: 'X: %{x}<br>Y: %{y}<br>r = %{z:.3f}<extra></extra>',
+                    colorbar: { title: 'r', thickness: 16, outlinewidth: 0 } }];
+                layout = { ...layout, title: mkTitle('Correlation Heatmap'),
+                    xaxis: { ...axCfg(''), tickangle: -35 }, yaxis: axCfg(''),
+                    margin: { t: 60, r: 60, b: 110, l: 110 } };
+                break;
+            }
+            case 'area': {
+                if (!xCol || !yCol) { showToast('Select X and Y columns for Area chart', 'error'); return null; }
+                const xv = getVals(xCol), yv = getNumVals(yCol), len = Math.min(xv.length, yv.length);
+                if (!len) { showToast('No valid data for Area chart', 'error'); return null; }
+                traces = [{ x: xv.slice(0,len), y: yv.slice(0,len), type: 'scatter', mode: 'lines',
+                    fill: 'tozeroy', fillcolor: 'rgba(124,58,237,0.18)',
+                    line: { color: '#7c3aed', width: 2.5, shape: 'spline', smoothing: 0.8 },
+                    hovertemplate: `${xCol}: %{x}<br><b>${yCol}: %{y}</b><extra></extra>` }];
+                layout = { ...layout, title: mkTitle(`${yCol} over ${xCol}`), xaxis: axCfg(xCol), yaxis: axCfg(yCol) };
+                break;
+            }
+            case 'violin': {
+                const col = yCol || xCol;
+                if (!col) { showToast('Select a column for Violin plot', 'error'); return null; }
+                const vals = getNumVals(col);
+                if (vals.length < 5) { showToast('Need 5+ numeric values for Violin plot', 'error'); return null; }
+                traces = [{ y: vals, type: 'violin', name: col,
+                    box: { visible: true, width: 0.3 },
+                    meanline: { visible: true, color: '#f59e0b', width: 2 },
+                    line: { color: '#7c3aed', width: 2 },
+                    fillcolor: 'rgba(124,58,237,0.28)',
+                    marker: { color: '#7c3aed', size: 4, opacity: 0.5 },
+                    points: 'outliers', jitter: 0.35,
+                    hovertemplate: `<b>${col}</b>: %{y}<extra></extra>` }];
+                layout = { ...layout, title: mkTitle(`Violin Plot — ${col}`), xaxis: axCfg(''), yaxis: axCfg(col) };
+                break;
+            }
+            case 'bubble': {
+                if (!xCol || !yCol) { showToast('Select X and Y columns for Bubble chart', 'error'); return null; }
+                const xv = getNumVals(xCol), yv = getNumVals(yCol), len = Math.min(xv.length, yv.length);
+                if (!len) { showToast('No numeric data for Bubble chart', 'error'); return null; }
+                // Size from a 3rd numeric column if available, else y-magnitude
+                const extra = state.columns.find(c2 => state.columnTypes[c2]==='numeric' && c2!==xCol && c2!==yCol);
+                const szRaw = extra ? getNumVals(extra).slice(0,len) : yv.slice(0,len);
+                const szMax = Math.max(...szRaw.map(Math.abs)) || 1;
+                const sizes = szRaw.map(s => Math.max(6, (Math.abs(s)/szMax)*55));
+                traces = [{ x: xv.slice(0,len), y: yv.slice(0,len), type: 'scatter', mode: 'markers',
+                    marker: { size: sizes, color: yv.slice(0,len),
+                        colorscale: [[0,'#7c3aed'],[0.5,'#06b6d4'],[1,'#10b981']],
+                        showscale: true, colorbar: { title: yCol, thickness: 14, outlinewidth: 0 },
+                        opacity: 0.72, line: { color: 'rgba(255,255,255,0.15)', width: 1 } },
+                    hovertemplate: `${xCol}: %{x}<br>${yCol}: %{y}<extra></extra>` }];
+                layout = { ...layout, title: mkTitle(`${xCol} vs ${yCol} — Bubble`), xaxis: axCfg(xCol), yaxis: axCfg(yCol) };
+                break;
+            }
         }
+        if (!traces.length) return null;
         return { traces, layout, config };
     }
+
+    // ===== PYTHON CODE GENERATOR =====
+    function generatePythonCode(type, xCol, yCol) {
+        const f = state.fileName || 'data.csv';
+        const hdr = `import pandas as pd\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nimport numpy as np\n\ndf = pd.read_csv('${f}')\nplt.style.use('seaborn-v0_8-darkgrid')\nfig, ax = plt.subplots(figsize=(10, 6))\n`;
+        const ftr = `\nplt.tight_layout()\nplt.show()\n`;
+        const xq = xCol ? `'${xCol}'` : 'None', yq = yCol ? `'${yCol}'` : 'None';
+        const xdf = xCol ? `df['${xCol}']` : '', ydf = yCol ? `df['${yCol}']` : '';
+        const histCol = (yCol && state.columnTypes[yCol]==='numeric') ? yCol : (xCol || yCol);
+        const bodies = {
+            bar:       `ax.bar(${xdf}, ${ydf}, color=sns.color_palette('viridis', len(df)))\nax.set_xlabel('${xCol}')\nax.set_ylabel('${yCol}')\nax.set_title('${yCol} by ${xCol}')`,
+            line:      `ax.plot(${xdf}, ${ydf}, color='#7c3aed', lw=2.5, marker='o', ms=5)\nax.set_xlabel('${xCol}')\nax.set_ylabel('${yCol}')\nax.set_title('${yCol} over ${xCol}')`,
+            scatter:   `ax.scatter(${xdf}, ${ydf}, c=${xdf}, cmap='viridis', alpha=0.75, edgecolors='white', lw=0.5)\nax.set_xlabel('${xCol}')\nax.set_ylabel('${yCol}')\nax.set_title('${xCol} vs ${yCol}')`,
+            histogram: `vals = df['${histCol}'].dropna()\nn_bins = min(60, max(10, int(1 + 3.322 * np.log10(len(vals)))))\nax.hist(vals, bins=n_bins, color='#7c3aed', edgecolor='#a78bfa', alpha=0.85)\nax.set_xlabel('${histCol}')\nax.set_ylabel('Frequency')\nax.set_title('Distribution of ${histCol}')`,
+            pie:       `counts = df['${xCol || yCol}'].value_counts().head(15)\nax.pie(counts.values, labels=counts.index, autopct='%1.1f%%', colors=sns.color_palette('viridis', len(counts)))\nax.set_title('Distribution of ${xCol || yCol}')`,
+            box:       `sns.boxplot(y=df['${yCol || xCol}'], ax=ax, color='#7c3aed', flierprops=dict(marker='o', alpha=0.5))\nax.set_ylabel('${yCol || xCol}')\nax.set_title('Box Plot — ${yCol || xCol}')`,
+            heatmap:   `corr = df.select_dtypes(include='number').corr()\nsns.heatmap(corr, annot=True, fmt='.2f', cmap='RdYlGn', ax=ax, linewidths=0.5, square=True)\nax.set_title('Correlation Heatmap')`,
+            area:      `ax.fill_between(range(len(df)), ${ydf}, alpha=0.25, color='#7c3aed')\nax.plot(range(len(df)), ${ydf}, color='#7c3aed', lw=2.5)\nax.set_xlabel('Index')\nax.set_ylabel('${yCol}')\nax.set_title('${yCol} Area Chart')`,
+            violin:    `sns.violinplot(y=df['${yCol || xCol}'], ax=ax, color='#7c3aed', inner='box', cut=0)\nax.set_ylabel('${yCol || xCol}')\nax.set_title('Violin Plot — ${yCol || xCol}')`,
+            bubble:    `sizes = (df['${yCol}'].abs() / df['${yCol}'].abs().max()) * 500\nax.scatter(${xdf}, ${ydf}, s=sizes, c=${ydf}, cmap='viridis', alpha=0.7, edgecolors='white', lw=0.5)\nax.set_xlabel('${xCol}')\nax.set_ylabel('${yCol}')\nax.set_title('${xCol} vs ${yCol} — Bubble Chart')`,
+        };
+        return hdr + (bodies[type] || `# Chart type: ${type}`) + ftr;
+    }
+
 
     // ========== MULTI-CELL NOTEBOOK ===========
 
@@ -1277,86 +1394,7 @@ ${pyCode ? `<div class="code-section">
         showToast('Sheet exported as PDF', 'success');
     }
 
-    // ===== AI CHAT =====
-    async function sendChatMessage() {
-        const msg = dom.chatInput.value.trim();
-        if (!msg) return;
-        const key = getActiveApiKey();
-        if (!key) { showToast('No API key available. Select Use AI or enter your own key.', 'error'); return; }
 
-        const welcome = dom.chatMessages.querySelector('.chat-welcome');
-        if (welcome) welcome.remove();
-        appendMsg('user', msg);
-        dom.chatInput.value = ''; dom.chatInput.style.height = 'auto';
-        const tid = appendTyping();
-
-        try {
-            var ctx = 'You are a data science AI assistant. ';
-            ctx += 'Dataset: "' + state.fileName + '" with ' + state.data.length + ' rows, ' + state.columns.length + ' columns.\n';
-            ctx += 'Columns: ' + state.columns.join(', ') + '\n';
-            ctx += 'Types: ' + JSON.stringify(state.columnTypes) + '\n';
-            ctx += 'Nulls: ' + countNulls() + '\n';
-            if (state.data.length) {
-                ctx += 'Sample (first 3 rows):\n';
-                state.data.slice(0, 3).forEach(function (r, i) { ctx += 'Row ' + (i + 1) + ': ' + JSON.stringify(r) + '\n'; });
-            }
-            var nc = state.columns.filter(function (c) { return state.columnTypes[c] === 'numeric'; });
-            if (nc.length) {
-                ctx += 'Numeric summary:\n';
-                nc.slice(0, 5).forEach(function (c) {
-                    var v = getVals(c).filter(function (x) { return typeof x === 'number'; });
-                    if (v.length) ctx += '  ' + c + ': mean=' + mean(v).toFixed(2) + ', std=' + stdev(v).toFixed(2) + '\n';
-                });
-            }
-
-            var apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + key;
-            var promptText = ctx + '\nUser: ' + msg + '\n\nProvide helpful, concise data science guidance.';
-            var reqBody = JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 1024 } });
-
-            var res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
-            if (!res.ok) {
-                var errData = await res.json().catch(function () { return {}; });
-                var em = (errData.error && errData.error.message) ? errData.error.message : ('Error ' + res.status);
-                if (res.status === 429 || em.toLowerCase().indexOf('quota') >= 0 || em.toLowerCase().indexOf('rate') >= 0) {
-                    removeTyping(tid);
-                    appendMsg('ai', 'Rate limit reached. Auto-retrying in 17 seconds. Tip: Click Own API tab and enter a fresh key if this keeps happening.');
-                    showToast('Rate limited - auto-retry in 17s', 'info');
-                    setTimeout(async function () {
-                        var rtid = appendTyping();
-                        try {
-                            var r2 = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
-                            if (!r2.ok) throw new Error('Still limited');
-                            var d2 = await r2.json();
-                            removeTyping(rtid);
-                            appendMsg('ai', (d2.candidates && d2.candidates[0] && d2.candidates[0].content && d2.candidates[0].content.parts && d2.candidates[0].content.parts[0]) ? d2.candidates[0].content.parts[0].text : 'No response.');
-                        } catch (re) { removeTyping(rtid); appendMsg('ai', 'Still rate limited. Please wait a minute or use your own API key.'); }
-                    }, 17000);
-                    return;
-                }
-                throw new Error(em);
-            }
-            var data = await res.json();
-            removeTyping(tid);
-            var aiText = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : 'No response.';
-            appendMsg('ai', aiText);
-        } catch (e) { removeTyping(tid); appendMsg('ai', 'Error: ' + e.message); }
-    }
-
-    function appendMsg(role, text) {
-        const div = document.createElement('div'); div.className = 'chat-message ' + role;
-        const icon = role === 'ai' ? 'fa-robot' : 'fa-user';
-        const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/`(.*?)`/g, '<code style="background:var(--bg-hover);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:11px;">$1</code>').replace(/\n/g, '<br>');
-        div.innerHTML = '<div class="avatar"><i class="fas ' + icon + '"></i></div><div class="bubble">' + formatted + '</div>';
-        dom.chatMessages.appendChild(div); dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
-    }
-
-    function appendTyping() {
-        const id = 'typing-' + Date.now(), div = document.createElement('div'); div.className = 'chat-message ai'; div.id = id;
-        div.innerHTML = '<div class="avatar"><i class="fas fa-robot"></i></div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
-        dom.chatMessages.appendChild(div); dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight; return id;
-    }
-
-    function removeTyping(id) { const el = document.getElementById(id); if (el) el.remove(); }
 
     // ===== EXPORT =====
     async function exportData(fmt) {
