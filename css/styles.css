@@ -375,86 +375,159 @@ body {
     background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
 }
 
-/* Download */
+/* Download / Export dropdown */
 .download-dropdown {
     position: relative;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, var(--accent), var(--accent-light));
-    border: none;
-    color: white;
-    padding: 8px 20px;
-    border-radius: var(--radius-sm);
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: var(--transition);
-}
-
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px var(--accent-glow);
-}
-
 .dropdown-menu {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
     right: 0;
     background: var(--bg-card-solid);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius);
-    padding: 8px;
-    min-width: 220px;
-    box-shadow: var(--shadow);
+    padding: 6px;
+    min-width: 250px;
+    box-shadow: var(--shadow), 0 0 24px var(--accent-glow);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-8px);
-    transition: var(--transition);
-    z-index: 100;
+    transform: translateY(-10px) scale(0.97);
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1), visibility 0.22s;
+    z-index: 200;
+    overflow: hidden;
+}
+
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 18px;
+    width: 12px;
+    height: 12px;
+    background: var(--bg-card-solid);
+    border-left: 1px solid var(--border-hover);
+    border-top: 1px solid var(--border-hover);
+    transform: rotate(45deg);
+    border-radius: 2px;
+}
+
+.dropdown-menu-header {
+    padding: 8px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .dropdown-menu.show {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 .dropdown-menu button {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    padding: 10px 14px;
+    padding: 10px 12px;
     background: none;
     border: none;
     color: var(--text-primary);
     font-family: var(--font);
     font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     border-radius: var(--radius-sm);
     transition: var(--transition);
+    text-align: left;
 }
 
 .dropdown-menu button:hover {
     background: var(--bg-hover);
     color: var(--accent-light);
+    transform: translateX(3px);
 }
 
-.dropdown-menu button i {
-    width: 18px;
-    text-align: center;
-    color: var(--text-muted);
+.dropdown-menu button .export-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
 }
 
-.dropdown-menu button:hover i {
+.dropdown-menu button:hover .export-icon {
+    transform: scale(1.12);
+}
+
+.dropdown-menu button[data-export=png] .export-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.dropdown-menu button[data-export=pdf] .export-icon {
+    background: rgba(244, 63, 94, 0.15);
+    color: #f43f5e;
+    border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.dropdown-menu button[data-export=csv] .export-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.dropdown-menu button[data-export=json] .export-icon {
+    background: rgba(6, 182, 212, 0.15);
+    color: #06b6d4;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.dropdown-menu button[data-export=report] .export-icon {
+    background: rgba(124, 58, 237, 0.15);
     color: var(--accent-light);
+    border: 1px solid rgba(124, 58, 237, 0.3);
 }
 
+.export-btn-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.export-btn-text strong {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.export-btn-text span {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.dropdown-menu button:hover .export-btn-text span {
+    color: var(--text-secondary);
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 8px;
+}
 /* ==================== UPLOAD / WELCOME SECTION ==================== */
 
 .upload-section {
@@ -2399,4 +2472,203 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 2000;
+}
+
+/* ==================== EXPORT MODAL ==================== */
+.export-modal {
+    background: var(--bg-card-solid);
+    border: 1px solid var(--border-hover);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 520px;
+    box-shadow: var(--shadow), 0 0 60px var(--accent-glow);
+    animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    overflow: hidden;
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.88) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.export-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, rgba(124,58,237,0.08), transparent);
+}
+
+.export-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.export-modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    flex-shrink: 0;
+}
+
+.export-modal-header h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 2px;
+}
+
+.export-modal-header p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.export-modal-body {
+    padding: 20px 24px 24px;
+}
+
+.export-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-section-label i {
+    color: var(--accent-light);
+    font-size: 10px;
+}
+
+.export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.export-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+    color: var(--text-primary);
+    font-family: var(--font);
+    position: relative;
+    overflow: hidden;
+}
+
+.export-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--accent-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.export-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px var(--accent-glow);
+}
+
+.export-card:hover::before {
+    opacity: 1;
+}
+
+.export-card-wide {
+    grid-column: 1 / -1;
+}
+
+.export-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.export-card:hover .export-card-icon {
+    transform: scale(1.1) rotate(-3deg);
+}
+
+.export-card-icon.png  { background: rgba(16,185,129,0.18); color: #10b981; border: 1px solid rgba(16,185,129,0.35); }
+.export-card-icon.pdf  { background: rgba(244,63,94,0.18);  color: #f43f5e; border: 1px solid rgba(244,63,94,0.35);  }
+.export-card-icon.csv  { background: rgba(245,158,11,0.18); color: #f59e0b; border: 1px solid rgba(245,158,11,0.35); }
+.export-card-icon.json { background: rgba(6,182,212,0.18);  color: #06b6d4; border: 1px solid rgba(6,182,212,0.35);  }
+.export-card-icon.report { background: rgba(124,58,237,0.18); color: var(--accent-light); border: 1px solid rgba(124,58,237,0.35); }
+
+.export-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+.export-card-info strong {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.export-card-info span {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.export-card:hover .export-card-info strong {
+    color: var(--accent-light);
+}
+
+.export-card-arrow {
+    font-size: 11px;
+    color: var(--text-muted);
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.export-card:hover .export-card-arrow {
+    transform: translateX(3px);
+    color: var(--accent-light);
+}
+
+/* Light theme overrides for export modal */
+.theme-light .export-modal {
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+}
+
+/* Red theme overrides */
+.theme-red .export-modal-icon {
+    background: linear-gradient(135deg, var(--accent), #ff6b6b);
 }
