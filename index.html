@@ -73,18 +73,9 @@
                         <i class="fas fa-palette"></i>
                     </button>
 
-                    <div class="download-dropdown" id="downloadDropdown">
-                        <button class="btn-primary download-trigger" id="downloadBtn">
-                            <i class="fas fa-download"></i> Export
-                        </button>
-                        <div class="dropdown-menu" id="downloadMenu">
-                            <button data-export="png"><i class="fas fa-image"></i> Export as PNG</button>
-                            <button data-export="pdf"><i class="fas fa-file-pdf"></i> Export as PDF</button>
-                            <button data-export="csv"><i class="fas fa-file-csv"></i> Export Data as CSV</button>
-                            <button data-export="json"><i class="fas fa-file-code"></i> Export Data as JSON</button>
-                            <button data-export="report"><i class="fas fa-file-alt"></i> Full Report (PDF)</button>
-                        </div>
-                    </div>
+                    <button class="btn-primary" id="downloadBtn">
+                        <i class="fas fa-download"></i> Export
+                    </button>
                 </div>
             </header>
 
@@ -418,6 +409,73 @@
                 <button class="btn-primary" id="generateSheetBtn" style="width:100%;justify-content:center;">
                     <i class="fas fa-file-pdf"></i> Generate Sheet
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal-overlay" id="exportModal" style="display:none;">
+        <div class="export-modal">
+            <div class="export-modal-header">
+                <div class="export-modal-title">
+                    <div class="export-modal-icon"><i class="fas fa-file-export"></i></div>
+                    <div>
+                        <h3>Export Data</h3>
+                        <p>Choose your export format</p>
+                    </div>
+                </div>
+                <button class="icon-btn" id="closeExportModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="export-modal-body">
+                <div class="export-section-label"><i class="fas fa-chart-bar"></i> Chart Exports</div>
+                <div class="export-grid">
+                    <button class="export-card" data-export="png">
+                        <div class="export-card-icon png"><i class="fas fa-image"></i></div>
+                        <div class="export-card-info">
+                            <strong>PNG Image</strong>
+                            <span>Save chart as high-res image</span>
+                        </div>
+                        <i class="fas fa-chevron-right export-card-arrow"></i>
+                    </button>
+                    <button class="export-card" data-export="pdf">
+                        <div class="export-card-icon pdf"><i class="fas fa-file-pdf"></i></div>
+                        <div class="export-card-info">
+                            <strong>PDF Document</strong>
+                            <span>Save chart as PDF</span>
+                        </div>
+                        <i class="fas fa-chevron-right export-card-arrow"></i>
+                    </button>
+                </div>
+                <div class="export-section-label" style="margin-top:16px;"><i class="fas fa-database"></i> Data Exports</div>
+                <div class="export-grid">
+                    <button class="export-card" data-export="csv">
+                        <div class="export-card-icon csv"><i class="fas fa-file-csv"></i></div>
+                        <div class="export-card-info">
+                            <strong>CSV Spreadsheet</strong>
+                            <span>Download data as CSV</span>
+                        </div>
+                        <i class="fas fa-chevron-right export-card-arrow"></i>
+                    </button>
+                    <button class="export-card" data-export="json">
+                        <div class="export-card-icon json"><i class="fas fa-file-code"></i></div>
+                        <div class="export-card-info">
+                            <strong>JSON File</strong>
+                            <span>Download data as JSON</span>
+                        </div>
+                        <i class="fas fa-chevron-right export-card-arrow"></i>
+                    </button>
+                </div>
+                <div class="export-section-label" style="margin-top:16px;"><i class="fas fa-file-alt"></i> Full Report</div>
+                <div class="export-grid">
+                    <button class="export-card export-card-wide" data-export="report">
+                        <div class="export-card-icon report"><i class="fas fa-file-alt"></i></div>
+                        <div class="export-card-info">
+                            <strong>Full Report (PDF)</strong>
+                            <span>All charts + statistics + correlation matrix</span>
+                        </div>
+                        <i class="fas fa-chevron-right export-card-arrow"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
