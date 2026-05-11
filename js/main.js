@@ -76,7 +76,8 @@
     const dom = {};
     function cacheDom() {
         const ids = ['dataSummary', 'rowCount', 'colCount', 'nullCount',
-            'downloadBtn', 'downloadMenu', 'uploadSection', 'dropzone', 'fileInput', 'workspace',
+            'downloadBtn', 'exportModal', 'closeExportModal',
+            'uploadSection', 'dropzone', 'fileInput', 'workspace',
             'xAxisSelect', 'yAxisSelect', 'chartButtons', 'dataTableHead', 'dataTableBody', 'tableSearch',
             'prevPage', 'nextPage', 'pageInfo', 'chartArea', 'chartPlaceholder', 'statsPanel', 'statsContent',
             'closeStats', 'nullFillBtn', 'nullFillMenu', 'linearRegBtn', 'corrMatrixBtn', 'descStatsBtn',
@@ -219,9 +220,26 @@
 
         // Legacy python panel stubs (now per-cell)
 
-        // Download
-        dom.downloadBtn.onclick = () => dom.downloadMenu.classList.toggle('show');
-        dom.downloadMenu.onclick = (e) => { const btn = e.target.closest('[data-export]'); if (btn) { exportData(btn.dataset.export); dom.downloadMenu.classList.remove('show'); } };
+        // Export — open centered modal
+        dom.downloadBtn.onclick = () => {
+            if (!state.data || !state.data.length) {
+                showToast('Please upload a dataset first before exporting', 'error');
+                return;
+            }
+            dom.exportModal.style.display = 'flex';
+        };
+        dom.closeExportModal.onclick = () => { dom.exportModal.style.display = 'none'; };
+        dom.exportModal.onclick = (e) => {
+            // Click export card buttons
+            const card = e.target.closest('[data-export]');
+            if (card) {
+                exportData(card.dataset.export);
+                dom.exportModal.style.display = 'none';
+                return;
+            }
+            // Click backdrop to close
+            if (e.target === dom.exportModal) dom.exportModal.style.display = 'none';
+        };
 
         // Views
         dom.viewSplit.onclick = () => setView('split');
@@ -255,9 +273,8 @@
         // Chart SFX on click
         dom.chartArea.addEventListener('click', triggerChartSFX);
 
-        // Close dropdowns
+        // Close null fill dropdown when clicking outside
         document.onclick = (e) => {
-            if (!e.target.closest('#downloadDropdown')) dom.downloadMenu.classList.remove('show');
             if (!e.target.closest('.dropdown-tool')) dom.nullFillMenu.classList.remove('show');
         };
     }
@@ -1398,28 +1415,128 @@ ${pyCode ? `<div class="code-section">
 
     // ===== EXPORT =====
     async function exportData(fmt) {
-        // For PNG/PDF, use the first notebook cell with a chart
-        const getFirstChartEl = () => {
-            const areas = document.querySelectorAll('.nb-chart-area');
-            for (const el of areas) { if (el.data && el.data.length) return el; }
-            return null;
+        if (!state.data || !state.data.length) {
+            showToast('No data to export. Please upload a dataset first.', 'error');
+            return;
+        }
+
+        // Collect ALL notebook cells that have been run (have a rendered Plotly chart)
+        const getRenderedCells = () => {
+            return state.notebookCells.filter(cell => {
+                if (!cell.plotlyEl) return false;
+                try {
+                    return (cell.plotlyEl._fullData && cell.plotlyEl._fullData.length > 0) ||
+                           (cell.plotlyEl.data && cell.plotlyEl.data.length > 0);
+                } catch (e) { return false; }
+            });
         };
+
+        const baseName = (state.fileName || 'notebook').replace('.csv', '');
+
         try {
+            // ── PNG: export each rendered cell as a separate PNG file ──
             if (fmt === 'png') {
-                const el = getFirstChartEl(); if (!el) { showToast('No chart to export', 'error'); return; }
-                const img = await Plotly.toImage(el, { format: 'png', width: 1920, height: 1080 }); dlFile(img, (state.fileName || 'chart') + '.png'); showToast('PNG exported', 'success');
+                const cells = getRenderedCells();
+                if (!cells.length) {
+                    showToast('No charts found in notebook. Run a chart cell first.', 'error');
+                    return;
+                }
+                showToast(`Exporting ${cells.length} chart(s) as PNG...`, 'info');
+                let count = 0;
+                for (const cell of cells) {
+                    try {
+                        const label = cell.type ? `_${cell.type}` : '';
+                        const img = await Plotly.toImage(cell.plotlyEl, { format: 'png', width: 1920, height: 1080 });
+                        // Small delay between downloads so browser doesn't block them
+                        await new Promise(r => setTimeout(r, 150));
+                        dlFile(img, `${baseName}${label}_cell${cell.execN}.png`);
+                        count++;
+                    } catch (e2) { console.warn('PNG export failed for cell', cell.id, e2); }
+                }
+                showToast(`✓ Exported ${count} chart(s) as PNG`, 'success');
             }
+
+            // ── PDF: all rendered cells → one multi-page landscape PDF ──
             else if (fmt === 'pdf') {
-                const el = getFirstChartEl(); if (!el) { showToast('No chart to export', 'error'); return; }
-                const jsPDFmod = window.jspdf; const doc = new jsPDFmod.jsPDF('landscape');
-                const img = await Plotly.toImage(el, { format: 'png', width: 1600, height: 900 });
-                doc.setFontSize(18); doc.text('DataMining AI - ' + (state.fileName || 'Chart'), 14, 20);
-                doc.addImage(img, 'PNG', 14, 30, 270, 150); doc.save((state.fileName || 'chart') + '.pdf'); showToast('PDF exported', 'success');
+                const cells = getRenderedCells();
+                if (!cells.length) {
+                    showToast('No charts found in notebook. Run a chart cell first.', 'error');
+                    return;
+                }
+                const jsPDFmod = window.jspdf;
+                if (!jsPDFmod) { showToast('PDF library not loaded. Please refresh the page.', 'error'); return; }
+
+                showToast(`Building PDF with ${cells.length} chart(s)...`, 'info');
+                const doc = new jsPDFmod.jsPDF('landscape');
+                const now = new Date().toLocaleString();
+
+                for (let i = 0; i < cells.length; i++) {
+                    const cell = cells[i];
+                    if (i > 0) doc.addPage('landscape');
+
+                    try {
+                        // Page header
+                        doc.setFontSize(16);
+                        doc.setTextColor(40, 40, 40);
+                        const chartLabel = cell.type
+                            ? `${cell.type.charAt(0).toUpperCase() + cell.type.slice(1)} Chart`
+                            : 'Chart';
+                        doc.text(`DataMining AI — ${chartLabel} (Cell ${cell.execN})`, 14, 16);
+
+                        doc.setFontSize(10);
+                        doc.setTextColor(130, 130, 130);
+                        const axisInfo = (cell.xCol && cell.yCol)
+                            ? `X: ${cell.xCol}  |  Y: ${cell.yCol}`
+                            : cell.xCol ? `Column: ${cell.xCol}` : '';
+                        if (axisInfo) doc.text(axisInfo, 14, 23);
+                        doc.text(`File: ${state.fileName || 'data'}  |  ${state.data.length} rows  |  Generated: ${now}`, 14, 29);
+
+                        // Chart image
+                        const img = await Plotly.toImage(cell.plotlyEl, { format: 'png', width: 1600, height: 900 });
+                        doc.addImage(img, 'PNG', 14, 34, 268, 150);
+
+                        // Page number
+                        doc.setFontSize(9);
+                        doc.setTextColor(160, 160, 160);
+                        doc.text(`Page ${i + 1} of ${cells.length}`, 14, 200);
+                    } catch (e2) {
+                        doc.setFontSize(12);
+                        doc.setTextColor(200, 60, 60);
+                        doc.text(`Cell ${cell.execN}: Failed to render — ${e2.message}`, 14, 100);
+                        console.warn('PDF page failed for cell', cell.id, e2);
+                    }
+                }
+
+                doc.save(`${baseName}_notebook_${cells.length}charts.pdf`);
+                showToast(`✓ PDF exported with ${cells.length} chart(s)`, 'success');
             }
-            else if (fmt === 'csv') { const csv = Papa.unparse(state.data); const blob = new Blob([csv], { type: 'text/csv' }); downloadBlob(blob, (state.fileName || 'data') + '_processed.csv'); showToast('CSV exported', 'success'); }
-            else if (fmt === 'json') { const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: 'application/json' }); downloadBlob(blob, (state.fileName || 'data') + '.json'); showToast('JSON exported', 'success'); }
-            else if (fmt === 'report') { generateSheet(); }
-        } catch (e) { showToast('Export failed: ' + e.message, 'error'); }
+
+            // ── CSV: export processed data ──
+            else if (fmt === 'csv') {
+                showToast('Exporting CSV...', 'info');
+                const csv = Papa.unparse(state.data);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                downloadBlob(blob, `${baseName}_processed.csv`);
+                showToast(`✓ Data exported as CSV (${state.data.length} rows)`, 'success');
+            }
+
+            // ── JSON: export processed data ──
+            else if (fmt === 'json') {
+                showToast('Exporting JSON...', 'info');
+                const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: 'application/json' });
+                downloadBlob(blob, `${baseName}.json`);
+                showToast(`✓ Data exported as JSON (${state.data.length} records)`, 'success');
+            }
+
+            // ── Full Report: use existing sheet builder ──
+            else if (fmt === 'report') {
+                generateSheet();
+            }
+
+        } catch (e) {
+            showToast('Export failed: ' + e.message, 'error');
+            console.error('Export error:', e);
+        }
     }
 
     function dlFile(url, name) { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
