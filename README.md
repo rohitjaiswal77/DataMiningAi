@@ -42,9 +42,3 @@ Since this is a client-side application, you don't need a complex server setup t
  
 
 
-## How to use the AI Assistant
-
-1. Toggle the sidebar on the left using the menu button.
-2. You can switch between the "Built-in AI" (if configured) or the "Own API" tab.
-3. If using your own API, grab a [Google Gemini API Key](https://aistudio.google.com/app/apikey) and enter it in the settings.
-4. Start chatting with the AI about your uploaded data.
